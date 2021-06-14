@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="AudiobookPlayer_3.Views.LoginPage"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Accent">#96d1ff</Color>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition Height="100" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition Width="100"/>
+        </Grid.ColumnDefinitions>
+        <!--Title -->
+        <BoxView Color="{StaticResource Accent}" 
+                     Grid.ColumnSpan="4" />
+        <!-- Back Button-->
+        <!-- Note: android mdpi=24x24, hdpi=36x36, xhdpi=48x48, xxhdpi=60x60, xxxhdpi=72x72 -->
+        <!--
+        <StackLayout Grid.Row="0" Grid.Column="0" Spacing="0" HorizontalOptions="Start">
+            <Button Text="" ContentLayout="Left" ImageSource="baseline_arrow_back_black_18.png" HorizontalOptions="Start" Command="BackButton_OnClicked"/>
+        </StackLayout>
+        -->
+        <!-- Page Title-->
+        <Label Grid.Row="0"
+                   Grid.Column="0"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" 
+                   Text="Login"
+                   Grid.ColumnSpan="4"
+                   FontSize="Title"/>
+
+        <Entry Grid.Row="1"
+               Grid.Column="0"
+               Grid.ColumnSpan="4"
+               Placeholder="Username"
+               x:Name="user"
+               Text="{Binding UsernameEntry}"/>
+        <Entry Grid.Row="2"
+               Grid.Column="0"
+               Grid.ColumnSpan="4" 
+               Placeholder="Password"
+               IsPassword="True"
+               x:Name="pass"
+               Text="{Binding PasswordEntry}"/>
+
+        <Entry Grid.Row="3"
+               Grid.Column="0"
+               Grid.ColumnSpan="4"
+               Placeholder="Verify Password"
+               IsVisible="false"
+               IsPassword="True"
+               x:Name="verifyPass"/>
+
+        <Entry Grid.Row="4"
+               Grid.Column="0"
+               Grid.ColumnSpan="4"
+               Placeholder="Email"
+               IsVisible="false" 
+               x:Name="email"/>
+
+        <Button Text="Create Account"
+                Grid.Row="7"
+                Grid.Column="0"
+                x:Name="createAccount_Button"/>
+        <Button Text="Login"
+                Grid.Row="7"
+                Grid.Column="3"
+                x:Name="login_Button"
+                Command="{Binding LoginCommand}"/>
+    </Grid>
+</ContentPage>

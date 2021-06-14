@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudiobookPlayer_3.Views.AboutPage"
+             xmlns:vm="clr-namespace:AudiobookPlayer_3.ViewModels"
+             Title="{Binding Title}">
+    
+    <ContentPage.BindingContext>
+        <vm:AboutViewModel />
+    </ContentPage.BindingContext>
+    
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Accent">#96d1ff</Color>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+            <RowDefinition Height="50" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Label x:Name="userName"
+               Text="{Binding Username}"
+               Grid.Row="0"
+               Grid.Column="1"
+               Grid.ColumnSpan="3"
+               HorizontalOptions="Center"/>
+        <ScrollView Grid.Row="1"
+                    Grid.RowSpan="2"
+                    Grid.Column="1"
+                    Grid.ColumnSpan="3">
+            <StackLayout Orientation="Vertical"
+                         BackgroundColor="WhiteSmoke">
+                <Button Text="Login"
+                        TextColor="Wheat"
+                        VerticalOptions="Start"
+                        Command="{Binding NavigateToLoginCommand}"/>
+                <Button Text="Library"
+                        TextColor="Wheat"
+                        VerticalOptions="Start"
+                        Command="{Binding NavigateToLibraryCommand}"/>
+            </StackLayout>
+        </ScrollView>
+
+        <Label x:Name="BookTittle"
+               Text="{Binding BookTittle}"
+               TextColor="Black"
+               Grid.Row="3"
+               Grid.Column="0"
+               Grid.ColumnSpan="5" />
+        <Button x:Name="PlayButton"
+                Text="{Binding PlayButtonText}"
+                Grid.Row="4"
+                Grid.Column="0"
+                Grid.ColumnSpan="1"
+                VerticalOptions="StartAndExpand"/>
+        <Slider x:Name="PosSlider"
+                Grid.Row="4"
+                Grid.Column="1"
+                Grid.ColumnSpan="3"
+                Minimum=".01"
+                Maximum="{Binding PlayerDuration}"
+                Value="{Binding SliderPos, Mode=TwoWay}">
+            <Slider.Behaviors>
+                <xct:EventToCommandBehavior EventName="DragCompleted"
+                                            Command="{Binding dragCompletedCommand}"/>
+            </Slider.Behaviors>
+        </Slider>
+        <Label x:Name="PosLabel"
+               Text="{Binding DisplayPos}"
+               TextColor="Black"
+               Grid.Row="4"
+               Grid.Column="4"/>
+
+        <ProgressBar x:Name="PosProgress"
+                     Grid.Row="5"
+                     Grid.Column="0"
+                     Grid.ColumnSpan="5"
+                     Progress="{Binding Progress}"/>
+
+    </Grid>
+
+</ContentPage>
