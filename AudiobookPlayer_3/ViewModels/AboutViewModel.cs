@@ -39,6 +39,7 @@ namespace AudiobookPlayer_3.ViewModels
             PlayButtonCommand = new Command(PlayButton);
             NavigateToLoginCommand = new Command(NavigateToLogin);
             NavigateToLibraryCommand = new Command(NavigateToLibrary);
+            dragCompletedCommand = new Command(OnSliderChange);
         }
         private async void NavigateToLogin()
         {
@@ -89,9 +90,10 @@ namespace AudiobookPlayer_3.ViewModels
 
         public void OnSliderChange()
         {
+            
             try
             {
-                Debug.WriteLine("Slider Changed to " + SliderPos);
+                Debug.WriteLine("Slider Changed to ");
                 if (SliderPos < 1)
                     SliderPos = 1;
                 Pos = SliderPos;

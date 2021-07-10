@@ -33,7 +33,7 @@ namespace AudiobookPlayer_3.UWP
             this.InitializeComponent();
             this.Suspending += OnSuspending;
 
-            CrossMediaManager.Current.Init();
+            //CrossMediaManager.Current.Init();
         }
 
         /// <summary>

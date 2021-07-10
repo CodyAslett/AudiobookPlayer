@@ -2,6 +2,7 @@
 using AudiobookPlayer_3.Services;
 using MediaManager;
 using MediaManager.Media;
+using MediaManager.Player;
 using MediaManager.Playback;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,38 @@ namespace AudiobookPlayer_3.ViewModels
 {
     public class BaseViewModel : INotifyPropertyChanged
     {
-        public IDataStore<Item> DataStore => DependencyService.Get<IDataStore<Item>>();
+        
 
+        public IDataStore<Item> DataStore => DependencyService.Get<IDataStore<Item>>();
 
         public BaseViewModel()
         {
+            CrossMediaManager.Current.Init();
+            CrossMediaManager.Current.PositionChanged += (object sender, MediaManager.Playback.PositionChangedEventArgs e) =>
+            {
+                Debug.WriteLine("Pos changed to : " + e.Position);
+                pos = e.Position.TotalSeconds;
+                progress = pos / CrossMediaManager.Current.Duration.TotalSeconds;
+                SliderPos = pos;
+                //Pos = e.Position.TotalSeconds;
+                //Player.Pos = Pos;
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(Pos));
+                OnPropertyChanged(nameof(DisplayPos));
+            };
+            CrossMediaManager.Current.StateChanged += (object sender, MediaManager.Playback.StateChangedEventArgs e) =>
+            {
+                Debug.WriteLine("PlayButton : state : " + CrossMediaManager.Current.State.ToString());
+                if (CrossMediaManager.Current.State == MediaManager.Player.MediaPlayerState.Playing)
+                {
+                    PlayerDuration = CrossMediaManager.Current.Duration.TotalSeconds;
+                    PlayButtonText = "Pause ||";
+                }
+                else
+                {
+                    PlayButtonText = "Play -->";
+                }
+            };
         }
 
         protected bool SetProperty<T>(ref T backingStore, T value,
@@ -134,10 +162,11 @@ namespace AudiobookPlayer_3.ViewModels
         {
             get
             {
+                return Player.Pos;
                 //pos = Convert.ToDouble(Preferences.Get("playerPos", pos));
-                if (Player.Pos > 0)
-                    return Player.Pos;
-                return -1;
+                //if (Player.Pos > 0)
+                    //return Player.Pos;
+                //return -1;
             }
             set
             {
@@ -166,6 +195,7 @@ namespace AudiobookPlayer_3.ViewModels
                 {
                     Debug.WriteLine("ERROR : Failed to set Pos " + e.Message + "\n\n" + e.StackTrace);
                 }
+                OnPropertyChanged(nameof(sliderPos));
             }
         }
 
@@ -205,7 +235,7 @@ namespace AudiobookPlayer_3.ViewModels
             get
             {
                 Debug.WriteLine("Getting dispaly Pos");
-                TimeSpan time = TimeSpan.FromSeconds(SliderPos);
+                TimeSpan time = TimeSpan.FromSeconds(pos);
                 displayPos = time.ToString(@"hh\:mm\:ss");
 
                 return displayPos;
@@ -221,6 +251,11 @@ namespace AudiobookPlayer_3.ViewModels
         public double TrackLength
         {
             get => Player.Length;
+        }
+
+        public void OnMediaChanged()
+        {
+
         }
 
 

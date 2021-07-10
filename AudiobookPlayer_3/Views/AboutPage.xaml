@@ -67,7 +67,13 @@
                 Grid.Row="4"
                 Grid.Column="0"
                 Grid.ColumnSpan="1"
-                VerticalOptions="StartAndExpand"/>
+                VerticalOptions="StartAndExpand">
+            <Button.Behaviors>
+            <xct:EventToCommandBehavior
+                        EventName="Clicked"
+                        Command="{Binding PlayButtonCommand}"/>
+            </Button.Behaviors>
+        </Button>
         <Slider x:Name="PosSlider"
                 Grid.Row="4"
                 Grid.Column="1"

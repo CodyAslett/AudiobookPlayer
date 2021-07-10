@@ -77,13 +77,17 @@ namespace AudiobookPlayer_3.ViewModels
             get
             {
                 if (!hasInit)
+                {
+                    Debug.WriteLine("Player : Pos : has not initiated");
                     return 0;
+                }
                 Debug.WriteLine("PLAYER : Getting Pos ");
                 if (currentItem != null)
                 {
                     currentItem.Pos = CrossMediaManager.Current.Position.TotalSeconds;
                     return currentItem.Pos;
                 }
+                Debug.WriteLine("Player : Pos : no current Item");
                 return 1;
             }
             set
