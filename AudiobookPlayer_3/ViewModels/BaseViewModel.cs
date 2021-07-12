@@ -22,6 +22,9 @@ namespace AudiobookPlayer_3.ViewModels
 
         public BaseViewModel()
         {
+            Torrent t = new Torrent();
+
+
             CrossMediaManager.Current.Init();
             CrossMediaManager.Current.PositionChanged += (object sender, MediaManager.Playback.PositionChangedEventArgs e) =>
             {
