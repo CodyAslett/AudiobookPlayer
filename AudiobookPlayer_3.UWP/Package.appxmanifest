@@ -5,7 +5,10 @@
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-  IgnorableNamespaces="uap mp uap3">
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:iot="http://schemas.microsoft.com/appx/manifest/iot/windows10"
+
+  IgnorableNamespaces="uap mp uap3 iot rescap">
 
   <Identity
     Name="b2314581-b5c7-43ce-8789-64578f24d42b"
@@ -48,6 +51,14 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
       <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name=".mp3">
+            <uap:DisplayName>Audiobooks</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.mp3</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
         <uap:Extension Category="windows.fileOpenPicker">
           <uap:FileOpenPicker>
             <uap:SupportedFileTypes>
@@ -65,13 +76,18 @@
   </Applications>
 
   <Capabilities>
+    <rescap:Capability Name="broadFileSystemAccess"/>
     <uap:Capability Name="musicLibrary"/>
+    <uap:Capability Name="picturesLibrary"/>
+    <uap:Capability Name="videosLibrary"/>
+    <uap:Capability Name="removableStorage"/>
+    <uap:Capability Name ="documentsLibrary"/>
+    <uap3:Capability Name="remoteSystem"/>
     <Capability Name="internetClientServer"/>
     <uap3:Capability Name="backgroundMediaPlayback"/>
-    <uap:Capability Name="videosLibrary"/>
     <uap:Capability Name="sharedUserCertificates"/>
-    <uap:Capability Name="removableStorage"/>
     <Capability Name="privateNetworkClientServer"/>
-    <uap:Capability Name="picturesLibrary"/>
+    <iot:Capability Name="systemManagement"/>
+    <Capability Name="internetClient"/>
   </Capabilities>
 </Package>

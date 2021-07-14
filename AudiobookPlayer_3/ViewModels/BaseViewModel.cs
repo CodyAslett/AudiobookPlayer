@@ -16,14 +16,14 @@ namespace AudiobookPlayer_3.ViewModels
 {
     public class BaseViewModel : INotifyPropertyChanged
     {
-        
-
         public IDataStore<Item> DataStore => DependencyService.Get<IDataStore<Item>>();
+
+        public Torrent torrent = new Torrent();
 
         public BaseViewModel()
         {
-            Torrent t = new Torrent();
 
+            torrent.LoadAllTorrents();
 
             CrossMediaManager.Current.Init();
             CrossMediaManager.Current.PositionChanged += (object sender, MediaManager.Playback.PositionChangedEventArgs e) =>
@@ -71,7 +71,6 @@ namespace AudiobookPlayer_3.ViewModels
         private double playerDuration = 1;
         private string playButtonText = "Play >";
         private string displayPos = string.Empty;
-        private int secDelayOnPosUpdate = 3;
 
 
         bool isBusy = false;

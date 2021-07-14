@@ -11,6 +11,7 @@ using MediaManager;
 
 using Xamarin.Forms;
 using Xamarin.Essentials;
+using AudiobookPlayer_3.Services;
 
 namespace AudiobookPlayer_3.ViewModels
 {
@@ -41,8 +42,8 @@ namespace AudiobookPlayer_3.ViewModels
 
 
                 BookTittle = item.FileName;
-                
-                
+
+
                 //double oldPos = item.Pos;
                 //CurrentItem = item;
 
@@ -158,7 +159,7 @@ namespace AudiobookPlayer_3.ViewModels
 
             OnPropertyChanged(nameof(Items));
 
-            
+
             SelectedItem = null;
             IsBusy = false;
         }
@@ -204,7 +205,7 @@ namespace AudiobookPlayer_3.ViewModels
                         Debug.WriteLine("ITEMS : Selecting Items Failed : " + e.Message + "\n" + e.StackTrace);
                     }
                     Task.Factory.StartNew(() => Shell.Current.GoToAsync(".."));
-                } 
+                }
             }
         }
 
@@ -220,26 +221,68 @@ namespace AudiobookPlayer_3.ViewModels
                 if (pickResult != null)
                 {
                     Debug.WriteLine("**********[My Debugging] : File Picked : " + pickResult.FullPath.ToString() + " : " + pickResult.FileName);
-                    string tempPath = pickResult.FullPath;
-                    string name = Path.GetFileNameWithoutExtension(tempPath);
+                    string path = pickResult.FullPath;
+                    Debug.WriteLine($"ON ADD ITEM : {path} File Picked - {Path.GetFileName(path)}");
+                    string name = Path.GetFileNameWithoutExtension(path);
                     string type = pickResult.ContentType.ToString();
                     int hash = pickResult.GetHashCode();
 
-                    string path = null;
-
+                    // move file to app directory 
                     try
                     {
-                        File.Move(tempPath, FileSystem.AppDataDirectory);
-                        path = Path.Combine(FileSystem.AppDataDirectory, tempPath);
-                        Debug.WriteLine("ON ADD ITEM : On Item added Path : " + path);
+                        string destinationPath = Path.Combine(FileSystem.AppDataDirectory, Path.GetFileName(pickResult.FullPath));
+                        Debug.WriteLine($"ON ADD ITEM : copying {pickResult.FullPath} to {destinationPath}");
+
+                        CopyFileInterface copyDependencyResult = DependencyService.Get<CopyFileInterface>();
+                        if (copyDependencyResult == null)
+                        {
+                            Debug.WriteLine($"ON ADD ITEM : Dependency copy returned null");
+                        }
+                        else
+                        {
+                            bool copyResult = copyDependencyResult.Copy(pickResult);
+                            if (copyResult)
+                            {
+                                string shouldBeNewFile = Path.Combine(FileSystem.AppDataDirectory, Path.GetFileName(path));
+                                Debug.WriteLine($"ON ADD ITEM : Copied to : {shouldBeNewFile}");
+                                path = shouldBeNewFile;
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"ON ADD ITEM : Copied Failed");
+                            }
+                        }
                     }
-                    catch
+                    catch (Exception e)
                     {
-
+                        Debug.WriteLine($"ON ADD ITEM : ERROR failed to copy file {e.Message}\nSTACK TRACE : {e.StackTrace}");
                     }
 
-                    if (String.IsNullOrEmpty(path))
-                        path = tempPath;
+                    Debug.WriteLine($"ON ADD ITEM : current File path size is {new FileInfo(path).Length} bytes");
+
+                    if (File.Exists(path))
+                    {
+                        // setup torrent
+                        try
+                        {
+                            Torrent t = new Torrent();
+                            string torrentPath = await t.CreateTorrent(path);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"ERROR : On Add Torrent : {e.Message}\nSTACK TRACE : {e.StackTrace}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"ON ADD ITEM : {path} NOT FOUND");
+                    }
+
+
+
+                    Debug.WriteLine($"ON ADD ITEM : Path = {path}");
+
+
 
                     Item newItem = new Item()
                     {
@@ -261,7 +304,7 @@ namespace AudiobookPlayer_3.ViewModels
 
                     OnPropertyChanged(nameof(TrackLength));
 
-                    await Shell.Current.GoToAsync("..");
+                    Shell.Current.GoToAsync("..");
                 }
                 else
                 {
@@ -280,6 +323,7 @@ namespace AudiobookPlayer_3.ViewModels
                 Debug.WriteLine("ADD NEW ITEM : ERROR : Message : " + e.Message + "\nStackTrace : " + e.StackTrace);
             }
         }
+
         private async void PermissionCheck()
         {
 
@@ -294,5 +338,7 @@ namespace AudiobookPlayer_3.ViewModels
                 Debug.WriteLine("Items : Items View Model Have File Write Permission ");
             }
         }
+
+
     }
 }
