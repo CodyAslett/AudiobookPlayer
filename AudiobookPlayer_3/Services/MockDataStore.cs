@@ -13,17 +13,37 @@ using SQLite;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Xamarin.CommunityToolkit.ObjectModel;
+using System.Collections.ObjectModel;
 
 namespace AudiobookPlayer_3.Services
 {
     public class MockDataStore : ObservableObject, IDataStore<Item>
     {
         private List<Item> items;
+        private List<Item> serverItems;
         private static SQLiteAsyncConnection dbAsync;
 
         public List<Item> Items
         {
             get => items;
+        }
+        public List<Item> ServerItems
+        {
+            get => serverItems;
+        }
+        public ItemsGroup OnDivice
+        {
+            get
+            {
+                return new ItemsGroup("On Divice", items);
+            }
+        }
+        public ItemsGroup OnServer
+        {
+            get
+            {
+                return new ItemsGroup("On Divice", serverItems);
+            }
         }
 
         public MockDataStore()
@@ -32,6 +52,8 @@ namespace AudiobookPlayer_3.Services
             List<Task<bool>> dataTasks = Enumerable.Range(0, 1).Select(item => Task.Run(() => Init())).ToList();
             // Get an absolute path to the database file
             items = new List<Item>();
+            serverItems = new List<Item>();
+            FillListItemFromDB();
         }
         public async Task<bool> Init()
         {
@@ -92,7 +114,7 @@ namespace AudiobookPlayer_3.Services
             {
                 foreach (Item i in items)
                 {
-                    if (i.FileName.Equals(item.FileName))
+                    if (i.PrimaryId.Equals(item.PrimaryId))
                     {
                         Debug.WriteLine("   ******************************** Found Duplicate : Will stop adding item ");
                         return await Task.FromResult(false);
@@ -101,7 +123,14 @@ namespace AudiobookPlayer_3.Services
                 await Init();
                 int itemResult = await dbAsync.InsertAsync(item);
 
-                items.Add(item);
+                if (item.OnDivice)
+                {
+                    items.Add(item);
+                }
+                else
+                {
+                    serverItems.Add(item);
+                }
                 Debug.WriteLine("   ******************************** DB Add Item : " + item.FileName);
                 return await Task.FromResult(true);
             }
@@ -162,7 +191,21 @@ namespace AudiobookPlayer_3.Services
             await Init();
             items.Clear();
             items = dbAsync.Table<Item>().ToListAsync().Result;
-            Item foundItem = await dbAsync.Table<Item>().Where(s => s.PrimaryId.Equals(id)).FirstAsync();
+            Item foundItem = await dbAsync.Table<Item>().Where(s => s.PrimaryId.Equals(id)).Where(s => s.OnDivice.Equals(true)).FirstAsync();
+            Debug.WriteLine("################# Get Item Async found : " + foundItem.FileName + " at " + foundItem.Pos);
+
+            return foundItem;
+            //return Task.FromResult(items.FirstOrDefault(s => s.PrimaryId == id)).Result;
+            //return query;
+        }
+
+        public async Task<Item> GetServerItemAsync(int id)
+        {
+            Debug.WriteLine("Get Server item Async Start ID " + id);
+            await Init();
+            serverItems.Clear();
+            serverItems = dbAsync.Table<Item>().ToListAsync().Result;
+            Item foundItem = await dbAsync.Table<Item>().Where(s => s.PrimaryId.Equals(id)).Where(s => s.OnDivice.Equals(false)).FirstAsync();
             Debug.WriteLine("################# Get Item Async found : " + foundItem.FileName + " at " + foundItem.Pos);
 
             return foundItem;
@@ -177,7 +220,7 @@ namespace AudiobookPlayer_3.Services
             items.Clear();
             items = await dbAsync.Table<Item>().ToListAsync();
             Debug.WriteLine("Get Item Async Init done");
-            Item foundItem = await dbAsync.Table<Item>().Where(s => s.Path.Equals(path)).FirstAsync();
+            Item foundItem = await dbAsync.Table<Item>().Where(s => s.Path.Equals(path)).Where(s => s.OnDivice.Equals(true)).FirstAsync();
             Debug.WriteLine("################# Get Item Async Got " + foundItem.FileName + foundItem.Pos);
             return foundItem;
             //return query;
@@ -188,11 +231,22 @@ namespace AudiobookPlayer_3.Services
             Debug.WriteLine("GET items Async Start ");
             await Init();
             items.Clear();
-            items = await dbAsync.Table<Item>().ToListAsync();
+            items = await dbAsync.Table<Item>().Where(s => s.OnDivice.Equals(true)).ToListAsync();
             //return await db.Table<Item>().ToListAsync();
             return await Task.FromResult(items);
             //return await Task.FromResult(items);
         }
+        public async Task<IEnumerable<Item>> GetServerItemsAsync(bool forceRefresh = false)
+        {
+            Debug.WriteLine("GET server items Async Start ");
+            await Init();
+            serverItems.Clear();
+            serverItems = await dbAsync.Table<Item>().Where(s => s.OnDivice.Equals(false)).ToListAsync();
+            //return await db.Table<Item>().ToListAsync();
+            return await Task.FromResult(serverItems);
+            //return await Task.FromResult(items);
+        }
+
 
         public async void FillListItemFromDB()
         {
@@ -202,7 +256,7 @@ namespace AudiobookPlayer_3.Services
                 int itemsCount = await dbAsync.Table<Item>().CountAsync();
 
 
-                List<Item> temp = await dbAsync.Table<Item>().ToListAsync();
+                List<Item> temp = await dbAsync.Table<Item>().Where(s => s.OnDivice.Equals(true)).ToListAsync();
 
                 if (temp != null)
                 {
@@ -234,6 +288,16 @@ namespace AudiobookPlayer_3.Services
             {
                 Debug.WriteLine("******** ERROR : Failed to fill items from DB : " + e.Message + "\n" + e.StackTrace);
             }
+        }
+
+        
+    }
+    public class ItemsGroup : ObservableCollection<Item>
+    {
+        public string Name { get; private set; }
+        public ItemsGroup(string name, List<Item> itemsList) : base(itemsList)
+        {
+            Name = name;
         }
     }
 }

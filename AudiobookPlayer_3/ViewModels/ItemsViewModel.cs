@@ -12,6 +12,7 @@ using MediaManager;
 using Xamarin.Forms;
 using Xamarin.Essentials;
 using AudiobookPlayer_3.Services;
+using System.Collections.Generic;
 
 namespace AudiobookPlayer_3.ViewModels
 {
@@ -24,6 +25,8 @@ namespace AudiobookPlayer_3.ViewModels
         public ObservableCollection<Item> Items { get; }
 
         private Item _selectedItem;
+
+        public ObservableCollection<ItemsGroup> GroupedItems { get; private set; }
 
 
         async void OnItemSelected(Item item)
@@ -116,13 +119,13 @@ namespace AudiobookPlayer_3.ViewModels
             PermissionCheck();
 
             Items = new ObservableCollection<Item>();
+
             LoadItemsCommand = new Command(async () => await ExecuteLoadItemsCommand());
-
             ItemTapped = new Command<Item>(OnItemSelected);
-
             ItemSwipped = new Command<Item>(OnItemSwipped);
-
             AddItemCommand = new Command(OnAddItem);
+
+            GroupedItems = new ObservableCollection<ItemsGroup>();
         }
 
 
@@ -133,12 +136,24 @@ namespace AudiobookPlayer_3.ViewModels
 
             try
             {
+                List<Item> tempItems = new List<Item>();
+                List<Item> tempServerItems = new List<Item>();
+
                 Items.Clear();
-                var items = await DataStore.GetItemsAsync(true);
-                foreach (var item in items)
+                IEnumerable<Item> items = await DataStore.GetItemsAsync(true);
+                foreach (Item item in items)
                 {
                     Items.Add(item);
+                    tempItems.Add(item);
                 }
+                IEnumerable<Item> serverItems = await DataStore.GetServerItemsAsync(true);
+                
+                foreach (Item si in serverItems)
+                {
+                    tempServerItems.Add(si);
+                }
+                GroupedItems.Add(new ItemsGroup("On Divice", tempItems));
+                GroupedItems.Add(new ItemsGroup("On Server", tempServerItems));
             }
             catch (Exception ex)
             {
@@ -226,7 +241,6 @@ namespace AudiobookPlayer_3.ViewModels
                     string name = Path.GetFileNameWithoutExtension(path);
                     string type = pickResult.ContentType.ToString();
                     int hash = pickResult.GetHashCode();
-
                     // move file to app directory 
                     try
                     {
@@ -257,9 +271,7 @@ namespace AudiobookPlayer_3.ViewModels
                     {
                         Debug.WriteLine($"ON ADD ITEM : ERROR failed to copy file {e.Message}\nSTACK TRACE : {e.StackTrace}");
                     }
-
                     Debug.WriteLine($"ON ADD ITEM : current File path size is {new FileInfo(path).Length} bytes");
-
                     if (File.Exists(path))
                     {
                         // setup torrent
@@ -277,20 +289,26 @@ namespace AudiobookPlayer_3.ViewModels
                     {
                         Debug.WriteLine($"ON ADD ITEM : {path} NOT FOUND");
                     }
-
-
-
                     Debug.WriteLine($"ON ADD ITEM : Path = {path}");
-
-
-
                     Item newItem = new Item()
                     {
                         Id = Guid.NewGuid().ToString(),
+                        ServerID = 0,
                         FileName = name,
-                        Description = path,
                         Path = path,
+                        Size = string.Empty,
+                        Description = path,
+                        UserName = string.Empty,
+                        DiviceID = string.Empty,
+                        MagnentUrl = string.Empty,
                         Hash = hash.ToString(),
+                        BookName = string.Empty,
+                        SeriesName = string.Empty,
+                        Auther = string.Empty,
+                        Reader = string.Empty,
+                        Length = string.Empty,
+                        OnDivice = true,
+                        Pos = 0
                     };
 
                     bool addedItem = await DataStore.AddItemAsync(newItem);

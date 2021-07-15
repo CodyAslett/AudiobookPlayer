@@ -8,7 +8,7 @@ namespace AudiobookPlayer_3.Models
         [PrimaryKey, AutoIncrement]
         public int PrimaryId { get; set; }
         public string Id { get; set; }
-        public string ServerID { get; set; }
+        public long ServerID { get; set; }
         public string FileName { get; set; }
         public string Path { get; set; }
         public string Size { get; set; }

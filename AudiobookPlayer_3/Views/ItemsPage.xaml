@@ -4,7 +4,9 @@
              x:Class="AudiobookPlayer_3.Views.ItemsPage"
              Title="{Binding Title}"
              xmlns:local="clr-namespace:AudiobookPlayer_3.ViewModels"  
-             xmlns:model="clr-namespace:AudiobookPlayer_3.Models"  
+             xmlns:model="clr-namespace:AudiobookPlayer_3.Models"
+             xmlns:service="clr-namespace:AudiobookPlayer_3.Services"
+             x:DataType="local:ItemsViewModel"
              x:Name="BrowseItemsPage">
 
     <ContentPage.ToolbarItems>
@@ -16,11 +18,20 @@
     -->
     <RefreshView x:Name="LibraryRefreshView" x:DataType="local:ItemsViewModel" Command="{Binding LoadItemsCommand}" IsRefreshing="{Binding IsBusy, Mode=TwoWay}">
         <CollectionView x:Name="ItemsListView"
-                ItemsSource="{Binding Items}"
-                SelectionMode="None">
+                ItemsSource="{Binding GroupedItems}"
+                SelectionMode="None"
+                        IsGrouped="True">
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate x:DataType="service:ItemsGroup">
+                    <StackLayout Background="LightGray" Padding="10">
+                        <Label Text="{Binding Name}" HeightRequest="30"/>
+                    </StackLayout>
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <StackLayout Padding="10" x:DataType="model:Item">
+                    <StackLayout Padding="10" x:DataType="model:Item" BackgroundColor="AntiqueWhite">
+                        <Label Text="{Binding Name}" x:DataType="service:ItemsGroup"/>
                         <Label Text="{Binding FileName}" 
                             LineBreakMode="NoWrap" 
                             Style="{DynamicResource ListItemTextStyle}" 
@@ -41,7 +52,6 @@
                                 Direction="Left"
                                 Command="{Binding Source={RelativeSource AncestorType={x:Type local:ItemsViewModel}}, Path=ItemSwipped}"
                                 CommandParameter="{Binding .} "/>
-
                         </StackLayout.GestureRecognizers>
                     </StackLayout>
                 </DataTemplate>

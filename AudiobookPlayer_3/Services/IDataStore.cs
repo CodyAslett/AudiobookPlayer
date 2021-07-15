@@ -11,6 +11,8 @@ namespace AudiobookPlayer_3.Services
         Task<bool> DeleteItemAsync(int id);
         Task<T> GetItemAsync(string path);
         Task<T> GetItemAsync(int id);
+        Task<T> GetServerItemAsync(int id);
         Task<IEnumerable<T>> GetItemsAsync(bool forceRefresh = false);
+        Task<IEnumerable<T>> GetServerItemsAsync(bool forceRefresh = false);
     }
 }

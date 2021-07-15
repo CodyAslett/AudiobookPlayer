@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Xamarin.Essentials;
 using Xamarin.Forms;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace AudiobookPlayer_3.ViewModels
 {
@@ -20,11 +22,10 @@ namespace AudiobookPlayer_3.ViewModels
 
         public Torrent torrent = new Torrent();
 
+        public SyncWithServer Server = new SyncWithServer();
+
         public BaseViewModel()
         {
-
-            torrent.LoadAllTorrents();
-
             CrossMediaManager.Current.Init();
             CrossMediaManager.Current.PositionChanged += (object sender, MediaManager.Playback.PositionChangedEventArgs e) =>
             {
@@ -37,6 +38,7 @@ namespace AudiobookPlayer_3.ViewModels
                 OnPropertyChanged(nameof(Progress));
                 OnPropertyChanged(nameof(Pos));
                 OnPropertyChanged(nameof(DisplayPos));
+                
             };
             CrossMediaManager.Current.StateChanged += (object sender, MediaManager.Playback.StateChangedEventArgs e) =>
             {
@@ -51,6 +53,7 @@ namespace AudiobookPlayer_3.ViewModels
                     PlayButtonText = "Play -->";
                 }
             };
+            torrent.LoadAllTorrents();
         }
 
         protected bool SetProperty<T>(ref T backingStore, T value,
@@ -91,7 +94,8 @@ namespace AudiobookPlayer_3.ViewModels
             get
             {
                 username = Preferences.Get("loginUsername", "");
-                return username;
+                string token = Preferences.Get("serverToken", "");
+                return username + " : " + token;
             }
             set
             {
@@ -167,7 +171,7 @@ namespace AudiobookPlayer_3.ViewModels
                 return Player.Pos;
                 //pos = Convert.ToDouble(Preferences.Get("playerPos", pos));
                 //if (Player.Pos > 0)
-                    //return Player.Pos;
+                //return Player.Pos;
                 //return -1;
             }
             set
@@ -259,6 +263,54 @@ namespace AudiobookPlayer_3.ViewModels
         {
 
         }
+
+        public async Task<bool> StartServer()
+        {
+
+            if (string.IsNullOrEmpty(Server.Username) || string.IsNullOrEmpty(Server.Token))
+            {
+                bool logedIn = await Server.Login("cody", "pass");
+            }
+
+            SyncServerFiles();
+            if (!string.IsNullOrEmpty(Server.Username) || !string.IsNullOrEmpty(Server.Token))
+            {
+                return await Task.FromResult(true);
+            }
+            return await Task.FromResult(false);
+        }
+
+        async Task<Dictionary<long, string>> SyncServerFiles()
+        {
+            Dictionary<long, string> fileList = Server.GetFileList();
+
+            foreach (KeyValuePair<long, string> file in fileList)
+            {
+                Item tempItem = new Item()
+                {
+                    Id = "0",
+                    ServerID = file.Key,
+                    FileName = file.Value,
+                    Path = string.Empty,
+                    Size = string.Empty,
+                    Description = string.Empty,
+                    UserName = string.Empty,
+                    DiviceID = string.Empty,
+                    MagnentUrl = string.Empty,
+                    Hash = string.Empty,
+                    BookName = string.Empty,
+                    SeriesName = string.Empty,
+                    Auther = string.Empty,
+                    Reader = string.Empty,
+                    Length = string.Empty,
+                    OnDivice = false,
+                    Pos = 0
+                };
+            }
+
+            return await Task.FromResult(fileList);
+        }
+
 
 
         #region INotifyPropertyChanged

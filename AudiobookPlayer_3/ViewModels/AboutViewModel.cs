@@ -40,7 +40,11 @@ namespace AudiobookPlayer_3.ViewModels
             NavigateToLoginCommand = new Command(NavigateToLogin);
             NavigateToLibraryCommand = new Command(NavigateToLibrary);
             dragCompletedCommand = new Command(OnSliderChange);
+
+            StartServer();
         }
+
+
         private async void NavigateToLogin()
         {
             try
