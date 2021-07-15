@@ -33,39 +33,62 @@ namespace AudiobookPlayer_3.ViewModels
         {
             try
             {
-                Debug.WriteLine("ITEMS : on Item selected");
-                IsBusy = true;
-                if (item == null)
+                if (item.OnDivice)
                 {
-                    Debug.WriteLine("ITEMS : on item selected : item is null");
-                    return;
+                    Debug.WriteLine("ITEMS : on Item selected");
+                    IsBusy = true;
+
+                    if (item == null)
+                    {
+                        Debug.WriteLine("ITEMS : on item selected : item is null");
+                        return;
+                    }
+                    Debug.WriteLine("ITEMS : on item selected : item is not null");
+                    await CrossMediaManager.Current.Pause();
+                    BookTittle = item.FileName;
+                    try
+                    {
+                        //Player.Play(item);
+                        Debug.WriteLine("On Item Selected : try and play");
+                        await Player.Play(item);
+                        Debug.WriteLine("Item selected : File " + item.FileName + " will seek to " + item.Pos);
+                        await Player.SeekTo(TimeSpan.FromSeconds(item.Pos), item);
+                        Pos = item.Pos;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("ERROR : FAILED TO PLAY Track " + e.Message + "\n" + e.StackTrace);
+                    }
+
+                    IsBusy = false;
+                    await Shell.Current.Navigation.PopToRootAsync();
                 }
-                Debug.WriteLine("ITEMS : on item selected : item is not null");
-                await CrossMediaManager.Current.Pause();
-
-
-                BookTittle = item.FileName;
-
-
-                //double oldPos = item.Pos;
-                //CurrentItem = item;
-
-                try
+                else // not on divice
                 {
-                    //Player.Play(item);
-                    Debug.WriteLine("On Item Selected : try and play");
-                    await Player.Play(item);
-                    Debug.WriteLine("Item selected : File " + item.FileName + " will seek to " + item.Pos);
-                    await Player.SeekTo(TimeSpan.FromSeconds(item.Pos), item);
-                    Pos = item.Pos;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("ERROR : FAILED TO PLAY Track " + e.Message + "\n" + e.StackTrace);
-                }
 
-                IsBusy = false;
-                await Shell.Current.Navigation.PopToRootAsync();
+                    bool userWantsToDownload = await Application.Current.MainPage.DisplayAlert("Download", $"Do you Want to download {item.FileName}", "Yes", "No");
+                    if (userWantsToDownload)
+                    {
+                        if (Server.DownloadFile(item.ServerID))
+                        {
+                            // setup torrent
+                            try
+                            {
+                                Torrent t = new Torrent();
+                                string torrentPath = await t.CreateTorrent(FileSystem.AppDataDirectory + item.FileName + ".torrent");
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine($"ERROR : Selected Item : On Add Torrent : {e.Message}\nSTACK TRACE : {e.StackTrace}");
+                            }
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Selected Item Error : failed to download torrent file");
+                        }
+                        return;
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -78,15 +101,19 @@ namespace AudiobookPlayer_3.ViewModels
         {
             Debug.WriteLine("ITEMS : On Item Swipped starting");
             IsBusy = false;
-            bool userWantsToDelete = false;
-            userWantsToDelete = await Application.Current.MainPage.DisplayAlert("Caution : Deleting " + item.BookName, "Are you Sure you want to delete File : " + item.FileName, "Yes Delete IT", "NO!!! STOP");
-            if (userWantsToDelete == true)
+            if (item.OnDivice)
             {
-                await DataStore.DeleteItemAsync(item.PrimaryId);
+                bool userWantsToDelete = false;
+                userWantsToDelete = await Application.Current.MainPage.DisplayAlert("Caution : Deleting " + item.BookName, "Are you Sure you want to delete File : " + item.FileName, "Yes Delete IT", "NO!!! STOP");
+                if (userWantsToDelete == true)
+                {
+                    await DataStore.DeleteItemAsync(item.PrimaryId);
 
+                }
+                IsBusy = true;
+                IsBusy = false;
             }
-            IsBusy = true;
-            IsBusy = false;
+            // TODO : add deleting from server
         }
 
         string itemTitle = String.Empty;
@@ -140,6 +167,7 @@ namespace AudiobookPlayer_3.ViewModels
                 List<Item> tempServerItems = new List<Item>();
 
                 Items.Clear();
+                GroupedItems.Clear();
                 IEnumerable<Item> items = await DataStore.GetItemsAsync(true);
                 foreach (Item item in items)
                 {
@@ -279,6 +307,7 @@ namespace AudiobookPlayer_3.ViewModels
                         {
                             Torrent t = new Torrent();
                             string torrentPath = await t.CreateTorrent(path);
+                            Server.UploadFile(path + ".torrent");
                         }
                         catch (Exception e)
                         {

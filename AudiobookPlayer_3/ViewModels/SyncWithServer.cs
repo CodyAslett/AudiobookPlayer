@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -93,7 +95,7 @@ namespace AudiobookPlayer_3.ViewModels
         {
             try
             {
-                string serverResponse = GetRequestToServer("getfiles");
+                string serverResponse = GetRequestToServer(ServerAddress + "getfiles?username=" + userName + "&token=" + token);
                 Debug.WriteLine($"Server : Get File list request returned : {serverResponse}");
 
                 if (!string.IsNullOrEmpty(serverResponse))
@@ -124,12 +126,50 @@ namespace AudiobookPlayer_3.ViewModels
             return filesList;
         }
 
+        public bool DownloadFile(long id)
+        {
+            try
+            {
+                if (filesList.Count == 0)
+                {
+                    _ = GetFileList();
+                }
 
-        private string GetRequestToServer(string request)
+                string filename = string.Empty;
+                if (filesList.TryGetValue(id, out filename))
+                {
+                    string getFileRequest = ServerAddress + "getfile?username=" + userName + "&token=" + token + "&id=" + id;
+                    string torrentFilename = Path.Combine(FileSystem.AppDataDirectory, filename + ".torrent");
+                    Debug.WriteLine($"Server : Download File : Requesting : '{getFileRequest}' and putting it in '{torrentFilename}'");
+
+                    //string serverResponse = GetRequestToServer(getFileRequest);
+                    //Debug.WriteLine($"Server : Download File : server Returned : {serverResponse}");
+                    //File.WriteAllText(torrentFilename, serverResponse);
+
+                    GetFileFromServer(getFileRequest, torrentFilename);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Sync With Server : Download File : Error : {e.Message}\nSTACK TRACE : {e.StackTrace}");
+            }
+            return false;
+        }
+
+        public void UploadFile(string filePath)
         {
             if (!string.IsNullOrEmpty(userName) || !string.IsNullOrEmpty(token))
             {
-                string serverRequest = ServerAddress + request + "?username=" + userName + "&token=" + token;
+                string postFileRequest = ServerAddress + "addfile?username=" + userName + "&token=" + token;
+                Debug.WriteLine($"Server : Upload File : requesting : {postFileRequest} to upload'{filePath}");
+                PostFileToServer(postFileRequest, filePath);
+            }
+        }
+
+        private string GetRequestToServer(string serverRequest)
+        {
+            if (!string.IsNullOrEmpty(userName) || !string.IsNullOrEmpty(token))
+            {
                 Debug.WriteLine($"Server : Requesting from server : {serverRequest}");
                 HttpClient httpClient = new HttpClient();
                 string serverResponse = httpClient.GetStringAsync(serverRequest).Result;
@@ -139,8 +179,54 @@ namespace AudiobookPlayer_3.ViewModels
             Debug.WriteLine($"Server : Request Failed becuse no username token combo found username:{userName}, token:{token}");
             return string.Empty;
         }
-    }
 
+        private bool GetFileFromServer(string request, string name)
+        {
+            try
+            {
+                using (HttpClient webClient = new HttpClient())
+                {
+                    Debug.WriteLine($"Server : Get File From Server : requesting : '{request}' and saving to '{name}'");
+
+                    FileStream fileStream = File.Create(name);
+                    webClient.GetStreamAsync(request).Result.CopyTo(fileStream);
+                    fileStream.Flush();
+                    fileStream.Close();
+                }
+                if (File.Exists(FileSystem.AppDataDirectory + name))
+                {
+                    return true;
+                }
+                Debug.WriteLine($"Server : Get File From Server : Error : file not found");
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Server : Get File From Server : Error : {e.Message}\nSTACK TRACE : {e.StackTrace}");
+            }
+            return false;
+        }
+
+        private bool PostFileToServer(string request, string filePath)
+        {
+            Debug.WriteLine($"Server : Post File to server requesting {request} and uploading file '{filePath}'");
+            try
+            {
+                FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                MultipartFormDataContent content = new MultipartFormDataContent();
+                content.Add(new StreamContent(fileStream), "torrent", filePath);
+                HttpClient httpClient = new HttpClient();
+                HttpResponseMessage response = httpClient.PostAsync(request, content).Result;
+                Debug.WriteLine($"Server : Post File To Server response : '{response.Content} with code {response.StatusCode}");
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Server : Post File : Error : {e.Message}\nSTACK TRACE {e.StackTrace}");
+            }
+
+            return false;
+        }
+    }
+        
     public class serverGetFilesJsonResponse
     {
         [JsonProperty("fileCount")]

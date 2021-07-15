@@ -123,7 +123,9 @@ namespace AudiobookPlayer_3.UWP
                 stream.CopyTo(test);
                 Debug.WriteLine($"COPY : Test File STream size is {test.Length} bytes");
                 test.Flush();
+                test.Close();
                 Debug.WriteLine($"COPY : file is {new FileInfo(destination).Length} bytes");
+
                 return true;
             }
             catch (Exception e)

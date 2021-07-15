@@ -145,37 +145,53 @@ namespace AudiobookPlayer_3.ViewModels
 
         void ManagerPeersFound (object sender, PeersAddedEventArgs e)
         {
-            Debug.WriteLine($"TORRENT : Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");
+            Debug.WriteLine($"TORRENT : {e.TorrentManager.Torrent.Name} Found {e.NewPeers} new peers and {e.ExistingPeers} existing peers");
         }
 
         public async Task<String> CreateTorrent(string filePath)
         {
-            Debug.WriteLine($"TORRENT : Creating Torrent from {filePath}");
-            string fileDestination = Path.Combine(filePath + ".torrent");
-            Debug.WriteLine($"TORRENT : crated Torrent should be {fileDestination}");
-            TorrentCreator c = new TorrentCreator();
-            List<string> trackersList = new List<string>();
-            trackersList.Add(DefaultTracker);
-            c.Announces.Add(trackersList);
-            Debug.WriteLine($"TORRENT : about to try and create torrent from {filePath} to {fileDestination}");
-            //c.Create(new TorrentFileSource(filePath), fileDestination); // seems to hang
-            await c.CreateAsync(new TorrentFileSource(filePath), fileDestination);
-            Debug.WriteLine($"TORRENT : create torrent created : {fileDestination}");
-
-            if(File.Exists(fileDestination))
+            try
             {
-                SetupEngine();
-                AddTorrent(fileDestination);
-                StartEngine();
-                return await Task.FromResult(fileDestination);
-            }
-            else
-            {
-                Debug.WriteLine($"TORRENT : create torrent torrent dosent exist : {fileDestination}");
-                return await Task.FromResult(string.Empty);
-            }
-            
+                Debug.WriteLine($"TORRENT : Creating Torrent from {filePath}");
+                string fileDestination = Path.Combine(filePath + ".torrent");
+                Debug.WriteLine($"TORRENT : Created Torrent should be {fileDestination}");
+                TorrentCreator c = new TorrentCreator();
+                List<string> trackersList = new List<string>();
+                trackersList.Add(DefaultTracker);
+                c.Announces.Add(trackersList);
+                Debug.WriteLine($"TORRENT : about to try and create torrent from {filePath} to {fileDestination}");
+                
+                c.Hashed += delegate (object o, TorrentCreatorEventArgs e)
+                {
+                    Debug.WriteLine("Current File is {0}% hashed", e.FileCompletion);
+                    Debug.WriteLine("Overall {0}% hashed", e.OverallCompletion);
+                    Debug.WriteLine("Total data to hash: {0}", e.OverallSize);
+                };
+                //c.Create(new TorrentFileSource(filePath), fileDestination); // seems to hang
+                //await c.CreateAsync(new TorrentFileSource(filePath), fileDestination);
+                await c.CreateAsync(new TorrentFileSource(filePath), fileDestination);
+                Debug.WriteLine($"TORRENT : create torrent created : {fileDestination}");
+                /*
+                if (File.Exists(fileDestination))
+                {
+                    SetupEngine();
+                    AddTorrent(fileDestination);
+                    await StartEngine();
+                    return await Task.FromResult(fileDestination);
+                }
+                else
+                {
+                    Debug.WriteLine($"TORRENT : create torrent torrent dosent exist : {fileDestination}");
+                    return await Task.FromResult(string.Empty);
+                }
+                */
 
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"TORRENT : Create Torrent ERROR : {e.Message}\nSTACK TRACE : {e.StackTrace}");
+            }
+            return await Task.FromResult(string.Empty);
         }
     }
 }

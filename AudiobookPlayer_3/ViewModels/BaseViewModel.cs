@@ -306,6 +306,8 @@ namespace AudiobookPlayer_3.ViewModels
                     OnDivice = false,
                     Pos = 0
                 };
+                await DataStore.AddItemAsync(tempItem);
+
             }
 
             return await Task.FromResult(fileList);
